@@ -1,0 +1,2 @@
+rootProject.name='CC_Door_Face'
+include ':app'
