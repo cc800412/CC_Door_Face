@@ -1,5 +1,6 @@
 package cc.makepower.cc_door_face.retrofit;
 
+import java.util.List;
 import java.util.Map;
 
 import cc.makepower.cc_door_face.bean.ResultBean;
@@ -22,21 +23,14 @@ import retrofit2.http.Streaming;
  */
 
 public interface RestApi {
-    @GET(Url.URL_ROOT_ + "rest/v1/queryRemoteDoorList")
-    Observable<ResultBean<VarListBean>> fetchDoorList(@QueryMap Map<String, Object> stringObjectMap);
-
-
-    @POST(Url.URL_ROOT_ + "rest/v1/buildRemotedoor")
-    @FormUrlEncoded
-    Observable<ResultBean> buildRemotedoor(@FieldMap Map<String, Object> stringObjectMap);
-
-
-
     /*
    下载文件
     */
     @Streaming
     @GET
     Observable<ResponseBody> downLoadFile(@retrofit2.http.Url String fileUrl);
+
+    @GET("face/face-permission")
+    Observable<ResultBean<List<String>>> fetchFaceList(@QueryMap Map<String, Object> stringObjectMap);
 }
 

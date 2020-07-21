@@ -14,7 +14,7 @@ public class ResultBean<T> {
 	@SerializedName("resultCode")
 	private int code;
 	@Expose
-	@SerializedName("resultMessage")
+	@SerializedName("resultMsg")
 	private String message;
 	@Expose
 	@SerializedName("data")

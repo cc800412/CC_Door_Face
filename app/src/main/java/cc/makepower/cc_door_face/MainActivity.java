@@ -151,6 +151,7 @@ public class MainActivity extends BaseActivity implements MainContract.View {
                     Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 100);
         } else {
             mainPresenter.initFaceSdk();
+            mainPresenter.fetchFaceList(1,deviceId);
         }
 
     }
@@ -349,7 +350,7 @@ public class MainActivity extends BaseActivity implements MainContract.View {
 
     @Override
     public void eventBusJpush(Bundle bundle) {
-        mainPresenter.fetchDoorPermission(deviceId);
+        mainPresenter.fetchFaceList(1,deviceId);
     }
 
     CCDoorFaceCheckIngFaceDialog ccDoorFaceCheckIngFaceDialog;
@@ -367,9 +368,8 @@ public class MainActivity extends BaseActivity implements MainContract.View {
     }
 
     @Override
-    public void fetchDoorPermissionCallBack(boolean result, BindDeviceResult bindDeviceResult) {
-        if (result)
-            progressFaceNum.setMax(bindDeviceResult.getUserFacePermissions().size());
+    public void fetchFaceListCallBack(boolean result, List<String> facePaths) {
+        if (result) progressFaceNum.setMax(facePaths.size());
     }
 
     @Override

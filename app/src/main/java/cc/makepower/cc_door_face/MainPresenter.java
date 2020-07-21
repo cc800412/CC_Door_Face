@@ -27,7 +27,6 @@ import cc.makepower.cc_door_face.bean.ResultBean;
 import cc.makepower.cc_door_face.bean.UserFacePermission;
 import cc.makepower.cc_door_face.camera.FaceHelper;
 import cc.makepower.cc_door_face.camera.FaceServer;
-import cc.makepower.cc_door_face.retrofit.DownLoadPermissionDataSource;
 import cc.makepower.cc_door_face.utils.DeviceUtils;
 import cc.makepower.cc_door_face.utils.TextToSpeechUtils;
 import io.reactivex.Observable;
@@ -41,7 +40,6 @@ import io.reactivex.schedulers.Schedulers;
 import okhttp3.ResponseBody;
 
 class MainPresenter extends APresenter<MainContract.View> implements MainContract {
-    DownLoadPermissionDataSource downLoadPermissionDataSource;
     public static final String APP_ID = "BRSbMCi9Y1VX1TT9G2vV5vijWDn22pR4Ttzaik62umhz";
     //    public static final String APP_ID = "BRSbMCi9Y1VX1TT9G2vV5viN21zWj2nRD72NgDvGJ5rb";
     public static final String SDK_KEY = "5BAJFgZWsvDVh5ATMkox4FMqH2ZTNXxQVBjgGhxjtfaJ";
@@ -67,7 +65,6 @@ class MainPresenter extends APresenter<MainContract.View> implements MainContrac
 
     public MainPresenter(Context context) {
         super(context);
-        downLoadPermissionDataSource = DownLoadPermissionDataSource.getInstance(context);
     }
 
 
@@ -217,7 +214,7 @@ class MainPresenter extends APresenter<MainContract.View> implements MainContrac
 
 //                                    TextToSpeechUtils.getInstance(context).speek("开门成功");
                                     mView.searchFaceFindUserCallBack(true, compareResult.getSimilar(), compareResult.getUserName());
-                                    buildRemotedoor(userInfos[1], "", deviceId, requestId);
+//                                    buildRemotedoor(userInfos[1], "", deviceId, requestId);
 //                                    mView.buildRemotedoorCalBack(false);
                                 }
                             }
@@ -240,98 +237,36 @@ class MainPresenter extends APresenter<MainContract.View> implements MainContrac
                 });
     }
 
-    private long sendOpenRequestTime;//上一次发起开门请求的时间
-
-    /**
-     * 下发远程开门
-     *
-     * @param userId
-     * @param stationCode
-     * @param deviceID
-     * @param requestId
-     */
-    public void buildRemotedoor(final String userId, final String stationCode, final String deviceID, final Integer requestId) {
-        if ((System.currentTimeMillis() - sendOpenRequestTime) > 5000) {
-            sendOpenRequestTime = System.currentTimeMillis();
-            unSubscribe();
-            restDataSource.buildRemotedoor(stationCode, deviceID)
-                    .subscribeOn(Schedulers.newThread())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new Observer<ResultBean>() {
-                        @Override
-                        public void onSubscribe(Disposable d) {
-                            subscription = d;
-                        }
-
-                        @Override
-                        public void onNext(ResultBean resultBean) {
-                            if (resultBean.getCode() == ResultBean.Code.SUCCESS) {
-                                mView.showToast("开门成功");
-                                TextToSpeechUtils.getInstance(context).speek("开门成功");
-                            } else {
-                                mView.buildRemotedoorCalBack(false);
-                                mView.showToast("开门失败");
-                                try {
-                                    TextToSpeechUtils.getInstance(context).speek(TextUtils.isEmpty(resultBean.getMessage()) ? "开门失败" : resultBean.getMessage());
-                                } catch (Exception e) {
-                                    mView.showToast(showError(e));
-                                }
-                            }
-                        }
-
-                        @Override
-                        public void onError(Throwable e) {
-                            mView.buildRemotedoorCalBack(false);
-                            mView.showToast(showError(e));
-                        }
-
-                        @Override
-                        public void onComplete() {
-
-                        }
-                    });
-        }
-
-
-    }
-
-
-    /**
-     * 获取开门人脸信息
-     */
-    public void fetchDoorPermission(String deviceId) {
+    public void fetchFaceList(int pageIndex, String deviceId){
         unSubscribe();
-        downLoadPermissionDataSource.fetchDoorPermission(deviceId, DeviceUtils.getUniqueId(context))
+        restDataSource.fetchFaceList(pageIndex,deviceId)
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<PostResultBean<BindDeviceResult>>() {
+                .subscribe(new Observer<List<String>>() {
                     @Override
                     public void onSubscribe(Disposable d) {
-                        subscription = d;
+                        setSubscription(d);
                     }
 
                     @Override
-                    public void onNext(PostResultBean<BindDeviceResult> resultBean) {
-//                        if (resultBean != null && resultBean.getStatus() == 1) {
-                        if (resultBean.getData() != null) {
-                            userFacePemission.clear();
-                            userFacePemission.addAll(resultBean.getData().getUserFacePermissions());
+                    public void onNext(List<String> strings) {
+                        if (strings != null) {
+                            facePathList.clear();
+                            facePathList.addAll(strings);
 
                             //清空本地人脸库
                             FaceServer.getInstance().deleteFile(new File(FaceServer.ROOT_PATH+ File.separator+FaceServer.SAVE_FEATURE_DIR));
                             FaceServer.getInstance().deleteFile(new File(FaceServer.ROOT_PATH+ File.separator+FaceServer.SAVE_IMG_DIR));
-                            downLoadPermission(userFacePemission.get(0).getImageUrl(), false);//这里featureUrl 后台写反了imageUrl
-                            mView.fetchDoorPermissionCallBack(true, resultBean.getData());
+                            downLoadPermission(facePathList.get(0), false);//这里featureUrl 后台写反了imageUrl
+                            mView.fetchFaceListCallBack(true, strings);
                         } else {
-                            mView.fetchDoorPermissionCallBack(false, null);
+                            mView.fetchFaceListCallBack(false, null);
                         }
                     }
 
                     @Override
                     public void onError(Throwable e) {
-                        e.printStackTrace();
-                        mView.showToast(showError(e));
-                        mView.fetchDoorPermissionCallBack(false, null);
+
                     }
 
                     @Override
@@ -341,7 +276,7 @@ class MainPresenter extends APresenter<MainContract.View> implements MainContrac
                 });
     }
 
-    List<UserFacePermission> userFacePemission = new ArrayList<>();
+    List<String> facePathList = new ArrayList<>();
 
 
     /**
@@ -370,24 +305,24 @@ class MainPresenter extends APresenter<MainContract.View> implements MainContrac
                                 + File.separator
                                 + urls[urls.length - 1]);
                         if (isImg) {
-                            userFacePemission.remove(0);
-                            mView.downLoadPermissionCallBack(true, userFacePemission.size());
-                            if (userFacePemission.size() != 0) {
-                                downLoadPermission(userFacePemission.get(0).getImageUrl(), false);
+                            facePathList.remove(0);
+                            mView.downLoadPermissionCallBack(true, facePathList.size());
+                            if (facePathList.size() != 0) {
+                                downLoadPermission(facePathList.get(0), false);
                             }
                         } else {
-                            downLoadPermission(userFacePemission.get(0).getFeatureUrl(), true);
+                            downLoadPermission(facePathList.get(0), true);
                         }
 
                     }
 
                     @Override
                     public void onError(Throwable e) {
-                        userFacePemission.remove(0);
-                        if (userFacePemission.size() != 0) {
-                            downLoadPermission(userFacePemission.get(0).getImageUrl(), false);
+                        facePathList.remove(0);
+                        if (facePathList.size() != 0) {
+                            downLoadPermission(facePathList.get(0), false);
                         }
-                        mView.downLoadPermissionCallBack(false, userFacePemission.size());
+                        mView.downLoadPermissionCallBack(false, facePathList.size());
                     }
 
                     @Override

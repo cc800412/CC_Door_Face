@@ -9,6 +9,7 @@ import com.google.gson.GsonBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -105,34 +106,6 @@ public class RestDataSource {
     }
 
     /**
-     * 获取门锁列表
-     *
-     * @return
-     */
-    public Observable<VarListBean> fetchDoorList(int pageIndex) {
-        Map<String, Object> stringObjectMap = new HashMap<>();
-        stringObjectMap.put("pageSize", 20);
-        stringObjectMap.put("pageIndex", pageIndex);
-        return restApi.fetchDoorList(stringObjectMap)
-                .throttleFirst(5, TimeUnit.SECONDS)
-                .map(new HttpResultInterceptorFunc<VarListBean>());
-    }
-
-
-    /**
-     * 远程开门
-     *
-     * @param stationCode
-     * @param deviceID
-     * @return
-     */
-    public Observable<ResultBean> buildRemotedoor(String stationCode, String deviceID) {
-        Map<String, Object> stringObjectMap = new HashMap<>();
-        stringObjectMap.put("deviceID", deviceID);
-        return restApi.buildRemotedoor(stringObjectMap)
-                .throttleFirst(5, TimeUnit.SECONDS);
-    }
-    /**
      * 下载
      *
      * @param url
@@ -144,4 +117,18 @@ public class RestDataSource {
                 .throttleFirst(5, TimeUnit.SECONDS);
     }
 
+    /**
+     * 获取人脸数据列表
+     *
+     * @return
+     */
+    public Observable<List<String>> fetchFaceList(int pageIndex, String deviceId) {
+        Map<String, Object> stringObjectMap = new HashMap<>();
+        stringObjectMap.put("pageSize", 20);
+        stringObjectMap.put("pageIndex", pageIndex);
+        stringObjectMap.put("deviceId", deviceId);
+        return restApi.fetchFaceList(stringObjectMap)
+                .throttleFirst(5, TimeUnit.SECONDS)
+                .map(new HttpResultInterceptorFunc<List<String>>());
+    }
 }
