@@ -151,7 +151,6 @@ public class MainActivity extends BaseActivity implements MainContract.View {
                     Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 100);
         } else {
             mainPresenter.initFaceSdk();
-            mainPresenter.fetchFaceList(1,deviceId);
         }
 
     }

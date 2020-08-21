@@ -266,7 +266,7 @@ class MainPresenter extends APresenter<MainContract.View> implements MainContrac
 
                     @Override
                     public void onError(Throwable e) {
-
+                        mView.fetchFaceListCallBack(false, null);
                     }
 
                     @Override
