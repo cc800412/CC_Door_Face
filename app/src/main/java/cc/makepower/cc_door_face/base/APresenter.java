@@ -11,6 +11,7 @@ import cc.makepower.cc_door_face.retrofit.Errors.RxJava2NullException;
 import cc.makepower.cc_door_face.retrofit.Errors.ServerErrorException;
 import cc.makepower.cc_door_face.retrofit.Errors.UnknownException;
 import cc.makepower.cc_door_face.retrofit.RestDataSource;
+import cc.makepower.cc_door_face.retrofit.RetDataSource;
 import io.reactivex.disposables.Disposable;
 import retrofit2.HttpException;
 
@@ -26,6 +27,7 @@ public  abstract class APresenter<T> implements LifecyclePresenter<T> {
 
     protected T mView;
     protected RestDataSource restDataSource;
+    protected RetDataSource retDataSource;
 
 
 
@@ -39,6 +41,7 @@ public  abstract class APresenter<T> implements LifecyclePresenter<T> {
     public APresenter(Context context) {
         this.context=context;
         restDataSource=RestDataSource.getInstance(context);
+        retDataSource = RetDataSource.getInstance(context);
     }
 
     /**

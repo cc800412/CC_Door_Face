@@ -214,7 +214,7 @@ class MainPresenter extends APresenter<MainContract.View> implements MainContrac
 
 //                                    TextToSpeechUtils.getInstance(context).speek("开门成功");
                                     mView.searchFaceFindUserCallBack(true, compareResult.getSimilar(), compareResult.getUserName());
-//                                    buildRemotedoor(userInfos[1], "", deviceId, requestId);
+                                    buildRemotedoor(userInfos[1], "", deviceId, requestId,compareResult.getUserName());
 //                                    mView.buildRemotedoorCalBack(false);
                                 }
                             }
@@ -257,7 +257,9 @@ class MainPresenter extends APresenter<MainContract.View> implements MainContrac
                             //清空本地人脸库
                             FaceServer.getInstance().deleteFile(new File(FaceServer.ROOT_PATH+ File.separator+FaceServer.SAVE_FEATURE_DIR));
                             FaceServer.getInstance().deleteFile(new File(FaceServer.ROOT_PATH+ File.separator+FaceServer.SAVE_IMG_DIR));
-                            downLoadPermission(facePathList.get(0), false);//这里featureUrl 后台写反了imageUrl
+                            if (facePathList.size()>0){
+                                downLoadPermission(facePathList.get(0), false);//这里featureUrl 后台写反了imageUrl
+                            }
                             mView.fetchFaceListCallBack(true, strings);
                         } else {
                             mView.fetchFaceListCallBack(false, null);
@@ -372,5 +374,89 @@ class MainPresenter extends APresenter<MainContract.View> implements MainContrac
         } catch (IOException e) {
             return false;
         }
+    }
+
+    public void pushOpenLog(String deviceId, String userTag){
+        unSubscribe();
+        restDataSource.pushOpenLog(deviceId,userTag)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<Boolean>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+                        setSubscription(d);
+                    }
+
+                    @Override
+                    public void onNext(Boolean aBoolean) {
+                        mView.pushOpenLogCallBack(true);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        mView.pushOpenLogCallBack(false);
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
+    }
+
+
+    private long sendOpenRequestTime;//上一次发起开门请求的时间
+    /**
+     * 下发远程开门
+     *
+     * @param userId
+     * @param stationCode
+     * @param deviceID
+     * @param requestId
+     */
+    public void buildRemotedoor(final String userId, final String stationCode, final String deviceID, final Integer requestId,String userTag) {
+        if ((System.currentTimeMillis() - sendOpenRequestTime) > 5000) {
+            sendOpenRequestTime = System.currentTimeMillis();
+            unSubscribe();
+            retDataSource.buildRemotedoor(stationCode, deviceID)
+                    .subscribeOn(Schedulers.newThread())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new Observer<ResultBean>() {
+                        @Override
+                        public void onSubscribe(Disposable d) {
+                            subscription = d;
+                        }
+
+                        @Override
+                        public void onNext(ResultBean resultBean) {
+                            if (resultBean.getCode() == ResultBean.Code.SUCCESS) {
+                                mView.showToast("开门成功");
+                                TextToSpeechUtils.getInstance(context).speek("开门成功");
+                                pushOpenLog(DeviceUtils.getUniqueId(context),userTag);
+                            } else {
+                                mView.buildRemotedoorCalBack(false);
+                                mView.showToast("开门失败");
+                                try {
+                                    TextToSpeechUtils.getInstance(context).speek(TextUtils.isEmpty(resultBean.getMessage()) ? "开门失败" : resultBean.getMessage());
+                                } catch (Exception e) {
+                                    mView.showToast(showError(e));
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+                            mView.buildRemotedoorCalBack(false);
+                            mView.showToast(showError(e));
+                        }
+
+                        @Override
+                        public void onComplete() {
+
+                        }
+                    });
+        }
+
+
     }
 }

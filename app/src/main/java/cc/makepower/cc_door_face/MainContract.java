@@ -17,5 +17,7 @@ interface MainContract {
         void buildRemotedoorCalBack(boolean result);
 
         void fetchFaceListCallBack(boolean result, List<String> facePaths);
+
+        void pushOpenLogCallBack(boolean result);
     }
 }

@@ -6,10 +6,13 @@ import java.util.Map;
 import cc.makepower.cc_door_face.bean.ResultBean;
 import cc.makepower.cc_door_face.bean.VarListBean;
 import io.reactivex.Observable;
+import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
+import retrofit2.http.Body;
 import retrofit2.http.FieldMap;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
+import retrofit2.http.Headers;
 import retrofit2.http.POST;
 import retrofit2.http.QueryMap;
 import retrofit2.http.Streaming;
@@ -32,5 +35,9 @@ public interface RestApi {
 
     @GET("face/face-permission")
     Observable<ResultBean<List<String>>> fetchFaceList(@QueryMap Map<String, Object> stringObjectMap);
+
+    @Headers({"Content-Type: application/json", "Accept: application/json"})
+    @POST("/face/face-pushLog")
+    Observable<ResultBean<Boolean>> pushOpenLog(@Body RequestBody info);
 }
 

@@ -336,6 +336,7 @@ public class MainActivity extends BaseActivity implements MainContract.View {
 //        Log.d("测试极光", DeviceUtils.getUniqueId(MainActivity.this));
 //        JPushInterface.addTags(MainActivity.this,0,hashSet);
         JPushInterface.setAlias(MainActivity.this, 0, DeviceUtils.getUniqueId(MainActivity.this));
+        Log.d("UniqueId",DeviceUtils.getUniqueId(MainActivity.this));
 
         BluetoothManager btManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = btManager.getAdapter();
@@ -349,7 +350,8 @@ public class MainActivity extends BaseActivity implements MainContract.View {
 
     @Override
     public void eventBusJpush(Bundle bundle) {
-        mainPresenter.fetchFaceList(1,deviceId);
+//        mainPresenter.fetchFaceList(1,deviceId);
+        mainPresenter.fetchFaceList(1,DeviceUtils.getUniqueId(MainActivity.this));
     }
 
     CCDoorFaceCheckIngFaceDialog ccDoorFaceCheckIngFaceDialog;
@@ -372,11 +374,19 @@ public class MainActivity extends BaseActivity implements MainContract.View {
     }
 
     @Override
+    public void pushOpenLogCallBack(boolean result) {
+        if (result) showToast("日志上传成功！");
+    }
+
+    @Override
     public void downLoadPermissionCallBack(boolean result, int surplusNum) {
         if (surplusNum == 0) {
             FaceServer.getInstance().initFaceList(MainActivity.this);
         }
         progressFaceNum.setProgress(surplusNum);
+        if (surplusNum == 0){
+            showToast("下载完成！");
+        }
     }
 
 

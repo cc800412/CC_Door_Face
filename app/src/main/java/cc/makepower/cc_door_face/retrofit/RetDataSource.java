@@ -15,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 
 import cc.makepower.blesdk.BuildConfig;
 import cc.makepower.cc_door_face.bean.ResultBean;
-import cc.makepower.cc_door_face.bean.VarListBean;
 import cc.makepower.cc_door_face.retrofit.cookies.CookiesManager;
 import cc.makepower.cc_door_face.utils.Map2JsonTool;
 import io.reactivex.Observable;
@@ -30,23 +29,26 @@ import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class RestDataSource {
+/**
+ * Created by bll on 2020/8/24 0024.
+ */
+public class RetDataSource {
     private static final int DEFAULT_TIMEOUT = 30;//超时时间30s
     private static final int DEFAULT_PAGESIZE = 20;//默认一页的数量
-    static RestDataSource appservice;
-    RestApi restApi;
+    static RetDataSource appservice;
+    RetApi retApi;
     Gson gsonBuilder;
 
-    public static RestDataSource getInstance(Context context) {
+    public static RetDataSource getInstance(Context context) {
         if (appservice == null) {
-            appservice = new RestDataSource(context, "");
+            appservice = new RetDataSource(context, "");
         }
         return appservice;
     }
 
     OkHttpClient client;
 
-    public RestDataSource(Context context, final String token) {
+    public RetDataSource(Context context, final String token) {
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
         builder.connectTimeout(DEFAULT_TIMEOUT, TimeUnit.SECONDS)//设置超时时间
                 .readTimeout(DEFAULT_TIMEOUT, TimeUnit.SECONDS)
@@ -87,14 +89,14 @@ public class RestDataSource {
 
     public void initRetrofit(Context context) {
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(Url.BASE_URL_HTTP + Url.BASE_URL_DOMAIN_DEFAULT + File.pathSeparator
-                        +Url.BASE_URL_PORT_DEFAULT+ File.separator)
+                .baseUrl(RetUrl.BASE_URL_HTTP + RetUrl.BASE_URL_DOMAIN_DEFAULT + File.pathSeparator
+                        +RetUrl.BASE_URL_PORT_DEFAULT+ File.separator)
                 .addConverterFactory(GsonConverterFactory.create(gsonBuilder))
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.createWithScheduler(Schedulers.io()))
                 .client(client)
                 .build();
 
-        restApi = retrofit.create(RestApi.class);
+        retApi = retrofit.create(RetApi.class);
     }
 
     /**
@@ -104,49 +106,19 @@ public class RestDataSource {
      * @param token
      */
     public void addHeaders(Context context, final String token) {
-        appservice = new RestDataSource(context, token);
+        appservice = new RetDataSource(context, token);
     }
 
     /**
-     * 下载
-     *
-     * @param url
+     *远程开门
+     * @param stationCode
+     * @param deviceID
      * @return
      */
-    public Observable<ResponseBody> downLoadFile(String url) {
-
-        return restApi.downLoadFile(url)
-                .throttleFirst(5, TimeUnit.SECONDS);
-    }
-
-    /**
-     * 获取人脸数据列表
-     *
-     * @return
-     */
-    public Observable<List<String>> fetchFaceList(int pageIndex, String deviceId) {
+    public Observable<ResultBean> buildRemotedoor(String stationCode, String deviceID) {
         Map<String, Object> stringObjectMap = new HashMap<>();
-        stringObjectMap.put("pageSize", 20);
-        stringObjectMap.put("pageIndex", pageIndex);
-        stringObjectMap.put("deviceId", deviceId);
-        return restApi.fetchFaceList(stringObjectMap)
-                .throttleFirst(5, TimeUnit.SECONDS)
-                .map(new HttpResultInterceptorFunc<List<String>>());
-    }
-
-    /**
-     * 上传开门成功日志
-     * @param deviceId 唯一识别码
-     * @param userTag  人像文件名
-     * @return
-     */
-    public Observable<Boolean> pushOpenLog(String deviceId, String userTag) {
-        Map<String, Object> paramMap = new HashMap<>();
-        paramMap.put("deviceId", deviceId);
-        paramMap.put("userTag", userTag);
-        return restApi.pushOpenLog(RequestBody.create(okhttp3.MediaType.parse("application/json; charset=utf-8"),
-                Map2JsonTool.map2Json(paramMap)))
-                .throttleFirst(5, TimeUnit.SECONDS)
-                .map(new HttpResultInterceptorFunc<Boolean>());
+        stringObjectMap.put("deviceID", deviceID);
+        return retApi.buildRemotedoor(stringObjectMap)
+                .throttleFirst(5, TimeUnit.SECONDS);
     }
 }
