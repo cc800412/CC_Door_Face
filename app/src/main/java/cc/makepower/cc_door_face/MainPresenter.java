@@ -2,6 +2,7 @@ package cc.makepower.cc_door_face;
 
 import android.content.Context;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.arcsoft.face.ErrorInfo;
 import com.arcsoft.face.FaceEngine;
@@ -43,6 +44,8 @@ class MainPresenter extends APresenter<MainContract.View> implements MainContrac
     public static final String APP_ID = "BRSbMCi9Y1VX1TT9G2vV5vijWDn22pR4Ttzaik62umhz";
     //    public static final String APP_ID = "BRSbMCi9Y1VX1TT9G2vV5viN21zWj2nRD72NgDvGJ5rb";
     public static final String SDK_KEY = "5BAJFgZWsvDVh5ATMkox4FMqH2ZTNXxQVBjgGhxjtfaJ";
+//    public static final String APP_ID = "BRSbMCi9Y1VX1TT9G2vV5vijWDn22pR4Ttzaik62umhz";
+//    public static final String SDK_KEY= "5BAJFgZWsvDVh5ATMkox4FMqPX1upsgDB1oaAJk7Dxa5";
     private static final float SIMILAR_THRESHOLD = 0.8F;
 
     private ConcurrentHashMap<Integer, Integer> requestFeatureStatusMap = new ConcurrentHashMap<>();
@@ -90,6 +93,7 @@ class MainPresenter extends APresenter<MainContract.View> implements MainContrac
                         if (activeCode == ErrorInfo.MOK || activeCode == ErrorInfo.MERR_ASF_ALREADY_ACTIVATED) {
                             mView.initFaceSdkCallBack(true);
                         } else {
+                            Log.e("test","errorCode="+activeCode);
                             mView.showToast("人脸引擎激活失败");
                             mView.initFaceSdkCallBack(false);
                         }
@@ -214,7 +218,7 @@ class MainPresenter extends APresenter<MainContract.View> implements MainContrac
 
 //                                    TextToSpeechUtils.getInstance(context).speek("开门成功");
                                     mView.searchFaceFindUserCallBack(true, compareResult.getSimilar(), compareResult.getUserName());
-                                    buildRemotedoor(userInfos[1], "", deviceId, requestId,compareResult.getUserName());
+                                    buildRemotedoor( compareResult.getUserName(), "", deviceId, requestId,compareResult.getUserName());
 //                                    mView.buildRemotedoorCalBack(false);
                                 }
                             }

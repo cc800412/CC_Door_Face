@@ -72,7 +72,7 @@ public class FaceServer {
                 int engineCode = faceEngine.init(context, FaceEngine.ASF_DETECT_MODE_VIDEO, FaceEngine.ASF_OP_0_ONLY,
                         16, 1, FaceEngine.ASF_FACE_DETECT | FaceEngine.ASF_FACE_RECOGNITION
                                 | FaceEngine.ASF_AGE | FaceEngine.ASF_FACE3DANGLE | FaceEngine.ASF_GENDER | FaceEngine.ASF_LIVENESS);
-                if (engineCode == ErrorInfo.MOK) {
+                if (engineCode == ErrorInfo.MOK|| engineCode == ErrorInfo.MERR_ASF_ALREADY_ACTIVATED) {
                     initFaceList(context);
                     return true;
                 } else {

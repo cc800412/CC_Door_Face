@@ -279,7 +279,6 @@ public class MainActivity extends BaseActivity implements MainContract.View {
                 mainPresenter.clearLeftFace(facePreviewInfoList);
 
                 if (drawInfoList != null && drawInfoList.size() > 0 && previewSize != null) {
-
                     for (int i = 0; i < facePreviewInfoList.size(); i++) {
                         if (drawInfoList.get(0).getRect().width() > dip2px(MainActivity.this, 150)
                         ) {
@@ -358,13 +357,13 @@ public class MainActivity extends BaseActivity implements MainContract.View {
 
     @Override
     public void searchFaceFindUserCallBack(boolean result, float similar, String compareResult) {
-        if (result) {
-            if (ccDoorFaceCheckIngFaceDialog == null || !ccDoorFaceCheckIngFaceDialog.isShowing()) {
-                handler.removeCallbacks(runnable);
-                handler.postDelayed(runnable, 5000);
-                showCCDoorFaceCheckIngFaceDialog(similar, new File(FaceServer.ROOT_PATH + File.separator + FaceServer.SAVE_IMG_DIR + File.separator + compareResult + ".jpg"));
-            }
-        }
+//        if (result) {
+//            if (ccDoorFaceCheckIngFaceDialog == null || !ccDoorFaceCheckIngFaceDialog.isShowing()) {
+//                handler.removeCallbacks(runnable);
+//                handler.postDelayed(runnable, 5000);
+//                showCCDoorFaceCheckIngFaceDialog(similar, new File(FaceServer.ROOT_PATH + File.separator + FaceServer.SAVE_IMG_DIR + File.separator + compareResult + ".jpg"));
+//            }
+//        }
 
     }
 
