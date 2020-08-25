@@ -61,8 +61,8 @@ android {
 
     buildTypes {
         debug_Gate_East {
-            resValue("string","deviceId","34295")
-            resValue("string","deviceName","公司-东面大门")
+            resValue("string","deviceId","34695")
+            resValue("string","deviceName","门禁——测试")
             resValue("string","deviceBlueToothName","ZJTT-01-L17E")
 //            resValue("string","deviceBlueToothName","ZJTT-01-L1D8")
             versionNameSuffix "-debug"
