@@ -31,6 +31,8 @@ import com.arcsoft.face.FaceEngine;
 import com.arcsoft.face.FaceFeature;
 import com.arcsoft.face.GenderInfo;
 import com.arcsoft.face.LivenessInfo;
+import com.arcsoft.face.enums.DetectFaceOrientPriority;
+import com.arcsoft.face.enums.DetectMode;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -99,7 +101,22 @@ public class MainActivity extends BaseActivity implements MainContract.View {
      * 优先打开的摄像头
      */
     private Integer cameraID = Camera.CameraInfo.CAMERA_FACING_FRONT;
-    //    private FaceEngine faceEngine;
+    /**
+     * VIDEO模式人脸检测引擎，用于预览帧人脸追踪
+     */
+    private FaceEngine ftEngine;
+    /**
+     * 用于特征提取的引擎
+     */
+    private FaceEngine frEngine;
+    /**
+     * IMAGE模式活体检测引擎，用于预览帧人脸活体检测
+     */
+    private FaceEngine flEngine;
+    private int ftInitCode = -1;
+    private int frInitCode = -1;
+    private int flInitCode = -1;
+
     private FaceHelper faceHelper;
     private int afCode = -1;
     String deviceId;
@@ -194,9 +211,11 @@ public class MainActivity extends BaseActivity implements MainContract.View {
 
             //请求FR的回调
             @Override
-            public void onFaceFeatureInfoGet(@Nullable final FaceFeature faceFeature, final Integer requestId) {
+            public void onFaceFeatureInfoGet(@Nullable final FaceFeature faceFeature, final Integer requestId, final Integer errorCode) {
+                Log.d("onFaceFeatureInfoGet","in");
                 //FR成功
                 if (faceFeature != null) {
+                    Log.d("onFaceFeatureInfoGet","FR success");
                     if (mainPresenter.getLivenessMap().get(requestId) != null && mainPresenter.getLivenessMap().get(requestId) == LivenessInfo.ALIVE) {
 
                         mainPresenter.searchFace(faceHelper, faceFeature, requestId, deviceId);
@@ -206,7 +225,7 @@ public class MainActivity extends BaseActivity implements MainContract.View {
                                 .subscribe(new Consumer<Long>() {
                                     @Override
                                     public void accept(Long aLong) {
-                                        onFaceFeatureInfoGet(faceFeature, requestId);
+                                        onFaceFeatureInfoGet(faceFeature, requestId,errorCode);
                                     }
                                 }));
                     }
@@ -219,9 +238,14 @@ public class MainActivity extends BaseActivity implements MainContract.View {
                 }
                 //FR 失败
                 else {
-
+                    Log.d("onFaceFeatureInfoGet","FR fail");
                     mainPresenter.getRequestFeatureStatusMap().put(requestId, RequestFeatureStatus.FAILED);
                 }
+            }
+
+            @Override
+            public void onFaceLivenessInfoGet(@Nullable LivenessInfo livenessInfo, Integer requestId, Integer errorCode) {
+                Log.d("onFaceLivenessInfoGet","in");
             }
 
         };
@@ -229,27 +253,44 @@ public class MainActivity extends BaseActivity implements MainContract.View {
 
         CameraPreviewListener cameraListener = new CameraPreviewListener() {
             @Override
-            public void onCameraOpened(Camera camera, int cameraId, int displayOrientation) {
+            public void onCameraOpened(Camera camera, int cameraId, int displayOrientation,boolean isMirror) {
+                Log.d("onCameraOpened","in");
                 cameraIdTemp = cameraId;
                 displayOrientationTemp = displayOrientation;
 
-
+                Camera.Size lastPreviewSize = previewSize;
                 previewSize = camera.getParameters().getPreviewSize();
                 drawHelper = new DrawHelper(previewSize.width, previewSize.height, previewView.getWidth(), previewView.getHeight(), displayOrientation
                         , cameraId);
 
-                faceHelper = new FaceHelper.Builder()
-                        .faceEngine(FaceServer.getInstance().faceEngine)
-                        .frThreadNum(MAX_DETECT_NUM)
-                        .previewSize(previewSize)
-                        .faceListener(faceListener)
-                        .currentTrackId(ConfigUtil.getTrackId(MainActivity.this.getApplicationContext()))
-                        .build();
+                if (faceHelper == null ||
+                        lastPreviewSize == null ||
+                        lastPreviewSize.width != previewSize.width || lastPreviewSize.height != previewSize.height) {
+                    Integer trackedFaceCount = null;
+                    // 记录切换时的人脸序号
+                    if (faceHelper != null) {
+                        trackedFaceCount = faceHelper.getTrackedFaceCount();
+                        faceHelper.release();
+                    }
+
+                    faceHelper = new FaceHelper.Builder()
+                            .ftEngine(ftEngine)
+                            .frEngine(frEngine)
+                            .flEngine(flEngine)
+                            .frQueueSize(MAX_DETECT_NUM)
+                            .flQueueSize(MAX_DETECT_NUM)
+                            .previewSize(previewSize)
+                            .faceListener(faceListener)
+                            .trackedFaceCount(trackedFaceCount == null ?
+                                    ConfigUtil.getTrackedFaceCount(MainActivity.this) :
+                                    trackedFaceCount)
+                            .build();
+                }
             }
 
-
             @Override
-            public void onPreview(final byte[] nv21, Camera camera) {
+            public void onPreview(byte[] nv21, Camera camera) {
+                Log.d("onPreview","in");
                 if (faceRectView != null) {
                     faceRectView.clearFaceInfo();
                 }
@@ -310,13 +351,13 @@ public class MainActivity extends BaseActivity implements MainContract.View {
             }
 
             @Override
-            public void onCameraConfiguraChanged(int cameraID, int displayOrientation) {
+            public void onCameraConfigurationChanged(int cameraID, int displayOrientation) {
                 if (drawHelper != null) {
                     drawHelper.setCameraDisplayOrientation(displayOrientation);
                 }
-
             }
         };
+
         cameraHelper = new CameraHelper.Builder()
                 .metrics(metrics)
                 .rotation(getWindowManager().getDefaultDisplay().getRotation())
@@ -420,12 +461,51 @@ public class MainActivity extends BaseActivity implements MainContract.View {
         return (int) (dpValue * scale + 0.5f);
     }
 
+    /**
+     * 初始化引擎
+     */
+    private void initEngine() {
+        ftEngine = new FaceEngine();
+        ftInitCode = ftEngine.init(this, DetectMode.ASF_DETECT_MODE_VIDEO, ConfigUtil.getFtOrient(this),
+                16, MAX_DETECT_NUM, FaceEngine.ASF_FACE_DETECT);
+
+        frEngine = new FaceEngine();
+        frInitCode = frEngine.init(this, DetectMode.ASF_DETECT_MODE_IMAGE, DetectFaceOrientPriority.ASF_OP_0_ONLY,
+                16, MAX_DETECT_NUM, FaceEngine.ASF_FACE_RECOGNITION);
+
+        flEngine = new FaceEngine();
+        flInitCode = flEngine.init(this, DetectMode.ASF_DETECT_MODE_IMAGE, DetectFaceOrientPriority.ASF_OP_0_ONLY,
+                16, MAX_DETECT_NUM, FaceEngine.ASF_LIVENESS);
+
+        if (ftInitCode != ErrorInfo.MOK) {
+            showToast("人脸检测引擎初始化失败");
+        }
+        if (frInitCode != ErrorInfo.MOK) {
+            showToast("特征提取引擎初始化失败");
+        }
+        if (flInitCode != ErrorInfo.MOK) {
+            showToast("活体检测引擎初始化失败");
+        }
+    }
 
     /**
      * 销毁引擎
      */
     private void unInitEngine() {
-        if (afCode == ErrorInfo.MOK) {
+        if (ftInitCode == ErrorInfo.MOK && ftEngine != null) {
+            synchronized (ftEngine) {
+                int ftUnInitCode = ftEngine.unInit();
+            }
+        }
+        if (frInitCode == ErrorInfo.MOK && frEngine != null) {
+            synchronized (frEngine) {
+                int frUnInitCode = frEngine.unInit();
+            }
+        }
+        if (flInitCode == ErrorInfo.MOK && flEngine != null) {
+            synchronized (flEngine) {
+                int flUnInitCode = flEngine.unInit();
+            }
         }
     }
 
@@ -441,7 +521,7 @@ public class MainActivity extends BaseActivity implements MainContract.View {
             synchronized (faceHelper) {
                 unInitEngine();
             }
-            ConfigUtil.setTrackId(this, faceHelper.getCurrentTrackId());
+            ConfigUtil.setTrackedFaceCount(MainActivity.this, faceHelper.getTrackedFaceCount());
             faceHelper.release();
         } else {
             unInitEngine();

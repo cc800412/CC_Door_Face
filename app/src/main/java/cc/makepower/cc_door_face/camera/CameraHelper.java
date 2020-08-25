@@ -99,7 +99,7 @@ public class CameraHelper implements Camera.PreviewCallback {
                 mCamera.setPreviewCallback(this);
                 mCamera.startPreview();
                 if (cameraListener != null) {
-                    cameraListener.onCameraOpened(mCamera, mCameraId, displayOrientation);
+                    cameraListener.onCameraOpened(mCamera, mCameraId, displayOrientation,true);
                 }
             } catch (Exception e) {
                 if (cameraListener != null) {
@@ -246,7 +246,7 @@ public class CameraHelper implements Camera.PreviewCallback {
             displayOrientation = getCameraOri(rotation);
             mCamera.setDisplayOrientation(displayOrientation);
             if (cameraListener != null) {
-                cameraListener.onCameraConfiguraChanged(mCameraId, displayOrientation);
+                cameraListener.onCameraConfigurationChanged(mCameraId, displayOrientation);
             }
         }
     }

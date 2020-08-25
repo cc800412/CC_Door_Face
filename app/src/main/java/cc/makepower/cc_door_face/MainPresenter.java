@@ -2,6 +2,7 @@ package cc.makepower.cc_door_face;
 
 import android.content.Context;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.arcsoft.face.ErrorInfo;
 import com.arcsoft.face.FaceEngine;
@@ -40,9 +41,9 @@ import io.reactivex.schedulers.Schedulers;
 import okhttp3.ResponseBody;
 
 class MainPresenter extends APresenter<MainContract.View> implements MainContract {
-    public static final String APP_ID = "BRSbMCi9Y1VX1TT9G2vV5vijWDn22pR4Ttzaik62umhz";
+    public static final String APP_ID = "BRSbMCi9Y1VX1TT9G2vV5vj6zRZbr7z3SEYismXPVGMc";;
     //    public static final String APP_ID = "BRSbMCi9Y1VX1TT9G2vV5viN21zWj2nRD72NgDvGJ5rb";
-    public static final String SDK_KEY = "5BAJFgZWsvDVh5ATMkox4FMqH2ZTNXxQVBjgGhxjtfaJ";
+    public static final String SDK_KEY = "JBApkGvN9aV3f4C5fREejeG3fvQfheRGqYmFmK9vQYf6";;
     private static final float SIMILAR_THRESHOLD = 0.8F;
 
     private ConcurrentHashMap<Integer, Integer> requestFeatureStatusMap = new ConcurrentHashMap<>();
@@ -177,7 +178,7 @@ class MainPresenter extends APresenter<MainContract.View> implements MainContrac
                     public void onNext(CompareResult compareResult) {
                         if (compareResult == null || compareResult.getUserName() == null) {
                             requestFeatureStatusMap.put(requestId, RequestFeatureStatus.FAILED);
-                            faceHelper.addName(requestId, "");
+                            faceHelper.setName(requestId, "");
                             return;
                         }
 //                        Log.d("相似度", compareResult.getSimilar() + "");
@@ -185,7 +186,7 @@ class MainPresenter extends APresenter<MainContract.View> implements MainContrac
                             boolean isAdded = false;
                             if (compareResultList == null) {
                                 requestFeatureStatusMap.put(requestId, RequestFeatureStatus.FAILED);
-                                faceHelper.addName(requestId, "");
+                                faceHelper.setName(requestId, "");
                                 return;
                             }
                             for (CompareResult compareResult1 : compareResultList) {
@@ -204,7 +205,7 @@ class MainPresenter extends APresenter<MainContract.View> implements MainContrac
                                 compareResultList.add(compareResult);
                                 //用户名称
                                 String userInfos[] = compareResult.getUserName().split("_");
-                                faceHelper.addName(requestId, userInfos[0]);
+                                faceHelper.setName(requestId, userInfos[0]);
                                 if (userInfos.length > 2 && compareResult.getUserName().contains("lock")) {
                                     //账号被冻结
                                     mView.showToast("账号被冻结开门失败");
@@ -221,13 +222,15 @@ class MainPresenter extends APresenter<MainContract.View> implements MainContrac
                             requestFeatureStatusMap.put(requestId, RequestFeatureStatus.SUCCEED);
                         } else {
                             requestFeatureStatusMap.put(requestId, RequestFeatureStatus.FAILED);
-                            faceHelper.addName(requestId, "");
+                            faceHelper.setName(requestId, "");
                         }
                     }
 
                     @Override
                     public void onError(Throwable e) {
+                        Log.d("test","no face");
                         requestFeatureStatusMap.put(requestId, RequestFeatureStatus.FAILED);
+                        buildRemotedoor("userInfos[1]", "", deviceId, requestId,"compareResult.getUserName()");
                     }
 
                     @Override
@@ -255,8 +258,8 @@ class MainPresenter extends APresenter<MainContract.View> implements MainContrac
                             facePathList.addAll(strings);
 
                             //清空本地人脸库
-                            FaceServer.getInstance().deleteFile(new File(FaceServer.ROOT_PATH+ File.separator+FaceServer.SAVE_FEATURE_DIR));
-                            FaceServer.getInstance().deleteFile(new File(FaceServer.ROOT_PATH+ File.separator+FaceServer.SAVE_IMG_DIR));
+                            FaceServer.getInstance().clearAllFaces(context);
+                            FaceServer.getInstance().clearAllFaces(context);
                             if (facePathList.size()>0){
                                 downLoadPermission(facePathList.get(0), false);//这里featureUrl 后台写反了imageUrl
                             }
@@ -300,10 +303,10 @@ class MainPresenter extends APresenter<MainContract.View> implements MainContrac
                     @Override
                     public void onNext(ResponseBody responseBody) {
                         String[] urls = url.split("/");
-                        writeResponseBodyToDisk(responseBody, FaceServer.getInstance().ROOT_PATH
+                        writeResponseBodyToDisk(responseBody, FaceServer.ROOT_PATH
                                 + File.separator
-                                + (isImg ? FaceServer.getInstance().SAVE_IMG_DIR :
-                                FaceServer.getInstance().SAVE_FEATURE_DIR)
+                                + (isImg ? FaceServer.SAVE_IMG_DIR :
+                                FaceServer.SAVE_FEATURE_DIR)
                                 + File.separator
                                 + urls[urls.length - 1]);
                         if (isImg) {
